@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 500" role="img" aria-labelledby="title desc">
+  <title id="title">Aziz Mahmud Hüdayi Vakfı</title><desc id="desc">Turquoise floral emblem</desc>
+  <g transform="translate(38 8) scale(.82)" stroke="#231f20" stroke-width="8" stroke-linejoin="round">
+    <path fill="#10b8b0" d="M210 48c-19-42-70-34-72 13-31-35-76-8-57 35-44-14-66 34-30 61-46 4-52 56-8 70-41 22-22 70 24 63-28 37 8 74 49 51-11 45 39 64 66 27 8 46 60 46 68 0 27 37 77 18 66-27 41 23 77-14 49-51 46 7 65-41 24-63 44-14 38-66-8-70 36-27 14-75-30-61 19-43-26-70-57-35-2-47-53-55-72-13Z"/>
+    <circle cx="210" cy="199" r="42" fill="#10b8b0"/><path fill="none" d="M210 157V49M181 168 138 61M165 190 81 96M168 221 51 157M186 237 67 290M210 241v127M234 237l70 104M252 221l125 6M255 190l84-94M239 168l43-107"/>
+  </g>
+  <g fill="#231f20" font-family="Arial, sans-serif" text-anchor="middle" font-weight="800"><text x="210" y="382" font-size="28">AZİZ MAHMÛD</text><text x="210" y="440" font-size="47">HÜDÂYİ VAKFI</text></g>
+</svg>
