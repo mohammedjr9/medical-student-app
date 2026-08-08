@@ -14,7 +14,8 @@
 /.zed
 /auth.json
 /node_modules
-/public/build
+# Keep production assets deployable on hosts that do not run Node/Vite.
+# Rebuild with `npm run build` whenever frontend classes or assets change.
 /public/fonts-manifest.dev.json
 /public/hot
 /public/storage

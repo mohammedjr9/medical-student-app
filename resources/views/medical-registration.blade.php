@@ -11,42 +11,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Static production CSS: works on shared hosting without Vite or a manifest. -->
+    <link rel="stylesheet" href="{{ asset('css/medical-registration.css') }}">
 
-    <!-- Lucide Icons CDN -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Custom Tailwind Configuration -->
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        medical: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb', // Primary Medical Blue
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#1e3a8a',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Tajawal', 'Plus Jakarta Sans', 'sans-serif'],
-                    },
-                    boxShadow: {
-                        'soft': '0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.01)',
-                        'card-hover': '0 20px 30px -10px rgba(37, 99, 235, 0.08), 0 10px 15px -5px rgba(0, 0, 0, 0.03)',
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Local Lucide build -->
+    <script src="{{ asset('vendor/lucide.js') }}"></script>
 
     <style>
         html { scroll-behavior: smooth; }
@@ -90,10 +59,14 @@
             color: #1e40af;
             box-shadow: 0 0 0 2px #2563eb;
         }
+
+        .page-shell { width: calc(100% - 2rem); }
+        @media (min-width: 640px) { .page-shell { width: calc(100% - 3rem); } }
+        @media (min-width: 1024px) { .page-shell { width: calc(100% - 4rem); } }
     </style>
 </head>
 
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen overflow-x-hidden py-8">
 
     {{-- Fallback Constants mapped from Controller or default DB lists --}}
     @php
@@ -134,7 +107,7 @@
     @endphp
 
     <!-- Container capped at ~850px -->
-    <div class="max-w-[850px] mx-auto">
+    <div class="page-shell mx-auto min-w-0 max-w-[850px]">
         
         <!-- Header Banner Card -->
         <div class="bg-white rounded-2xl p-6 sm:p-8 shadow-soft border border-slate-200/80 mb-8 relative overflow-hidden">
@@ -149,7 +122,7 @@
                         <img src="{{ asset($selectedUniversity['logo']) }}" alt="شعار {{ $selectedUniversity['name'] }}" class="w-24 h-28 sm:w-28 sm:h-32 object-contain">
                     </div>
                 </div>
-                <div>
+                <div class="min-w-0 max-w-full">
                     <p class="text-sm font-extrabold text-medical-700 mb-1">{{ $selectedUniversity['name'] }}</p>
                     <p dir="ltr" class="text-sm font-extrabold tracking-wide text-teal-700 mb-2">aziz mahmut hüdai vakfı</p>
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-medical-50 text-medical-700 border border-medical-200/70 mb-2">
@@ -198,6 +171,68 @@
                 </ul>
             </div>
         @endif
+
+        <!-- Beneficiary Eligibility Instructions -->
+        <section class="mb-8 overflow-hidden rounded-2xl border border-medical-200/80 bg-white shadow-soft" aria-labelledby="eligibility-title">
+            <div class="bg-gradient-to-l from-medical-700 to-medical-600 px-6 py-5 sm:px-8">
+                <div class="flex items-center gap-3 text-white">
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
+                        <i data-lucide="clipboard-check" class="h-6 w-6"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h2 id="eligibility-title" class="text-xl font-extrabold">معايير اختيار المستفيدين</h2>
+                        <p class="mt-1 text-sm font-medium text-medical-100">يرجى قراءة المعايير والوثائق المطلوبة قبل تعبئة طلب التسجيل</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 sm:p-8">
+                <ol class="space-y-4">
+                    @foreach ([
+                        'أن يكون الطالب مسجلاً ومنتظماً في إحدى كليات الطب البشري بجامعات قطاع غزة.',
+                        'ألا يقل المعدل التراكمي عن 80%.',
+                        'إعطاء الأولوية لأبناء الشهداء والأسرى.',
+                        'ألا يكون الطالب مستفيداً من منحة أو دعم يغطي كامل الرسوم الدراسية.',
+                        'أن يكون للطالب إخوة يدرسون في إحدى جامعات قطاع غزة.',
+                        'ألا يكون من الطلبة المستجدين (السنة الأولى) لهذا العام، وفقاً لسياسة المشروع.',
+                    ] as $index => $criterion)
+                        <li class="flex items-start gap-3">
+                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-medical-50 text-sm font-extrabold text-medical-700 ring-1 ring-medical-100">{{ $index + 1 }}</span>
+                            <span class="pt-0.5 text-sm font-medium leading-7 text-slate-700">{{ $criterion }}</span>
+                        </li>
+                    @endforeach
+
+                    <li class="flex items-start gap-3">
+                        <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-medical-50 text-sm font-extrabold text-medical-700 ring-1 ring-medical-100">7</span>
+                        <div class="min-w-0 flex-1 break-words">
+                            <p class="pt-0.5 text-sm font-bold leading-7 text-slate-700">تقديم جميع الوثائق المطلوبة، وتشمل:</p>
+                            <ul class="mt-3 grid gap-2 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2">
+                                @foreach ([
+                                    'إثبات قيد جامعي حديث.',
+                                    'كشف درجات يوضح المعدل التراكمي.',
+                                    'صورة الهوية.',
+                                    'أي مستندات تثبت الحالة الاجتماعية أو الاقتصادية عند الطلب.',
+                                    'شهادة قيد للإخوة في حال كان للطالب إخوة يدرسون في جامعات قطاع غزة.',
+                                ] as $document)
+                                    <li class="flex items-start gap-2 text-sm leading-6 text-slate-600">
+                                        <i data-lucide="file-check-2" class="mt-1 h-4 w-4 shrink-0 text-teal-600"></i>
+                                        <span>{{ $document }}</span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </li>
+                </ol>
+
+                <div class="mt-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
+                    <i data-lucide="info" class="mt-0.5 h-5 w-5 shrink-0 text-amber-600"></i>
+                    <div>
+                        <h3 class="text-sm font-extrabold">ملاحظة هامة</h3>
+                        <p class="mt-1 text-sm font-medium leading-7 text-amber-900/90">يكون القرار النهائي للجنة المشروع بالتوافق مع إدارة الجامعات، بعد مراجعة الطلبات والتحقق من البيانات بالتنسيق مع الجامعات.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- MAIN FORM -->
         <form id="medicalRegistrationForm" action="{{ route('medical-registration.store') }}" method="POST" enctype="multipart/form-data" novalidate class="space-y-8">
@@ -1034,7 +1069,10 @@
     <!-- JAVASCRIPT INTERACTIVE LOGIC -->
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            lucide.createIcons();
+            // Keep the form functional even if the optional icon bundle is unavailable.
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
 
             const form = document.getElementById('medicalRegistrationForm');
             const btnSubmit = document.getElementById('btnSubmit');
