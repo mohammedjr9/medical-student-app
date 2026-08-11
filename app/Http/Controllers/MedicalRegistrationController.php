@@ -26,26 +26,34 @@ class MedicalRegistrationController extends Controller
                 'key' => 'IUG',
                 'name' => 'الجامعة الإسلامية بغزة',
                 'logo' => 'images/universities/iug.png',
+                'program' => 'الطب البشري',
             ],
             'al-azhar-university' => [
                 'key' => 'AUG',
                 'name' => 'جامعة الأزهر بغزة',
                 'logo' => 'images/universities/aug.svg',
+                'program' => 'الطب البشري',
             ],
             'israa-university' => [
                 'key' => 'ISRAA',
                 'name' => 'جامعة الإسراء',
                 'logo' => 'images/universities/israa.png',
+                'program' => 'الطب البشري',
             ],
             'palestine-university' => [
                 'key' => 'UPAL',
                 'name' => 'جامعة فلسطين',
                 'logo' => 'images/universities/upal.svg',
+                'program' => 'طب الأسنان',
             ],
         ];
 
         abort_unless(isset($universityPages[$university]), 404);
         $selectedUniversity = $universityPages[$university];
+
+        if ($selectedUniversity['key'] === 'AUG') {
+            return response()->view('registration-closed', compact('selectedUniversity'));
+        }
 
         $academicLevels = [
             'level_1' => 'السنة الأولى',
@@ -56,6 +64,11 @@ class MedicalRegistrationController extends Controller
             'level_6' => 'السنة السادسة',
             'internship' => 'سنة الامتياز'
         ];
+
+        // برنامج طب الأسنان في جامعة فلسطين مكوّن من خمس سنوات دراسية.
+        if ($selectedUniversity['key'] === 'UPAL') {
+            unset($academicLevels['level_6']);
+        }
 
         $housingTypes = [
             'house' => 'منزل',
@@ -79,6 +92,17 @@ class MedicalRegistrationController extends Controller
 
     public function store(Request $request)
     {
+        if ($request->input('university_id') === 'AUG') {
+            return response()->view('registration-closed', [
+                'selectedUniversity' => [
+                    'key' => 'AUG',
+                    'name' => 'جامعة الأزهر بغزة',
+                    'logo' => 'images/universities/aug.svg',
+                    'program' => 'الطب البشري',
+                ],
+            ], 403);
+        }
+
         $startedAt = microtime(true);
         $submissionId = (string) Str::uuid();
         $phase = 'request_received';

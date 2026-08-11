@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>نموذج تسجيل طلبة الطب - {{ $selectedUniversity['name'] }}</title>
+    <title>نموذج تسجيل طلبة {{ $selectedUniversity['program'] }} - {{ $selectedUniversity['name'] }}</title>
     
     <!-- Fonts: Plus Jakarta Sans & Tajawal -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -127,9 +127,9 @@
                     <p dir="ltr" class="text-sm font-extrabold tracking-wide text-teal-700 mb-2">aziz mahmut hüdai vakfı</p>
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-medical-50 text-medical-700 border border-medical-200/70 mb-2">
                         <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
-                        بوابة تسجيل طلاب الكليات الطبية
+                        بوابة تسجيل طلاب {{ $selectedUniversity['program'] }}
                     </span>
-                    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-snug">التسجيل في مشروع مساعدات طلبة الطب في الجامعات الفلسطينية</h1>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-snug">التسجيل في مشروع مساعدات طلبة {{ $selectedUniversity['program'] }} في {{ $selectedUniversity['name'] }}</h1>
                     <p class="text-teal-700 text-sm sm:text-base mt-2 font-bold">بتمويل من مؤسسة محمود عزيز هدائي</p>
                     <p class="text-slate-500 text-sm mt-1 font-medium">تنفيذ جمعية جود الخيرية</p>
                 </div>
@@ -189,7 +189,7 @@
             <div class="p-6 sm:p-8">
                 <ol class="space-y-4">
                     @foreach ([
-                        'أن يكون الطالب مسجلاً ومنتظماً في إحدى كليات الطب البشري بجامعات قطاع غزة.',
+                        "أن يكون الطالب مسجلاً ومنتظماً في برنامج {$selectedUniversity['program']} في {$selectedUniversity['name']}.",
                         'ألا يقل المعدل التراكمي عن 80%.',
                         'إعطاء الأولوية لأبناء الشهداء والأسرى.',
                         'ألا يكون الطالب مستفيداً من منحة أو دعم يغطي كامل الرسوم الدراسية.',
@@ -405,6 +405,15 @@
                                 <span>{{ $message }}</span>
                             </p>
                         @enderror
+                    </div>
+
+                    <!-- Academic program (fixed by page) -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-2">التخصص</label>
+                        <div class="flex items-center gap-3 w-full px-4 py-3 bg-teal-50/70 border border-teal-200 rounded-xl text-sm font-bold text-teal-900">
+                            <i data-lucide="stethoscope" class="w-5 h-5 text-teal-600"></i>
+                            <span>{{ $selectedUniversity['program'] }}</span>
+                        </div>
                     </div>
 
                     <!-- 6. Academic Level -->

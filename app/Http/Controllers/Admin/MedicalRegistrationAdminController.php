@@ -53,12 +53,18 @@ class MedicalRegistrationAdminController extends Controller
 
         $students = $query->orderBy('id', 'desc')->paginate(15)->withQueryString();
 
-        // High Level Analytics & Counters
-        $totalStudents = MedicalRegistration::count();
-        $fatherMartyrsCount = MedicalRegistration::where('is_father_martyr', 'yes')->count();
-        $disabilitiesCount = MedicalRegistration::where('has_disability', 'yes')->count();
-        $siblingsCount = MedicalRegistration::where('has_sibling_student', 'yes')->count();
-        $highGpaCount = MedicalRegistration::where('gpa', '>=', 85)->count();
+        // High Level Analytics & Counters. When a university is selected, these
+        // cards describe that university instead of continuing to show global totals.
+        $analyticsQuery = MedicalRegistration::query();
+        if ($request->filled('university') && in_array($request->input('university'), $allowedUniversities, true)) {
+            $analyticsQuery->where('university_id', $request->input('university'));
+        }
+
+        $totalStudents = (clone $analyticsQuery)->count();
+        $fatherMartyrsCount = (clone $analyticsQuery)->where('is_father_martyr', 'yes')->count();
+        $disabilitiesCount = (clone $analyticsQuery)->where('has_disability', 'yes')->count();
+        $siblingsCount = (clone $analyticsQuery)->where('has_sibling_student', 'yes')->count();
+        $highGpaCount = (clone $analyticsQuery)->where('gpa', '>=', 85)->count();
         $universityCounts = MedicalRegistration::query()
             ->whereIn('university_id', $allowedUniversities)
             ->selectRaw('university_id, COUNT(*) as total')
