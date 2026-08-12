@@ -51,7 +51,7 @@ class MedicalRegistrationController extends Controller
         abort_unless(isset($universityPages[$university]), 404);
         $selectedUniversity = $universityPages[$university];
 
-        $closedUniversities = ['AUG', 'IUG', 'UPAL'];
+        $closedUniversities = ['AUG', 'IUG', 'UPAL', 'ISRAA'];
 
         if (in_array($selectedUniversity['key'], $closedUniversities, true)) {
             return response()->view('registration-closed', compact('selectedUniversity'));
@@ -94,7 +94,7 @@ class MedicalRegistrationController extends Controller
 
     public function store(Request $request)
     {
-        $closedUniversities = ['AUG', 'IUG', 'UPAL'];
+        $closedUniversities = ['AUG', 'IUG', 'UPAL', 'ISRAA'];
         $universityId = $request->input('university_id');
 
         if (in_array($universityId, $closedUniversities, true)) {
@@ -118,6 +118,15 @@ class MedicalRegistrationController extends Controller
                     'name' => 'جامعة فلسطين',
                     'logo' => 'images/universities/upal.svg',
                     'program' => 'طب الأسنان',
+                ];
+            }
+
+            if ($universityId === 'ISRAA') {
+                $selectedUniversity = [
+                    'key' => 'ISRAA',
+                    'name' => 'جامعة الإسراء',
+                    'logo' => 'images/universities/israa.png',
+                    'program' => 'الطب البشري',
                 ];
             }
 

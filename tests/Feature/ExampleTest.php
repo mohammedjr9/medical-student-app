@@ -17,20 +17,6 @@ class ExampleTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_each_university_has_its_own_registration_page(): void
-    {
-        $pages = [
-            '/israa-university' => ['ISRAA', 'images/universities/israa.png'],
-        ];
-
-        foreach ($pages as $url => [$key, $logo]) {
-            $this->get($url)
-                ->assertOk()
-                ->assertSee('name="university_id" value="'.$key.'"', false)
-                ->assertSee($logo, false);
-        }
-    }
-
     public function test_islamic_registration_is_closed(): void
     {
         $this->get('/islamic-university')
@@ -67,5 +53,17 @@ class ExampleTest extends TestCase
         $this->post('/medical-registration', ['university_id' => 'UPAL'])
             ->assertForbidden()
             ->assertSee('images/universities/upal.svg', false);
+    }
+
+    public function test_israa_registration_is_closed(): void
+    {
+        $this->get('/israa-university')
+            ->assertOk()
+            ->assertDontSee('name="university_id"', false)
+            ->assertSee('images/universities/israa.png', false);
+
+        $this->post('/medical-registration', ['university_id' => 'ISRAA'])
+            ->assertForbidden()
+            ->assertSee('images/universities/israa.png', false);
     }
 }
