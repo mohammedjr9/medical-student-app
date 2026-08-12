@@ -51,7 +51,9 @@ class MedicalRegistrationController extends Controller
         abort_unless(isset($universityPages[$university]), 404);
         $selectedUniversity = $universityPages[$university];
 
-        if ($selectedUniversity['key'] === 'AUG') {
+        $closedUniversities = ['AUG', 'IUG', 'UPAL'];
+
+        if (in_array($selectedUniversity['key'], $closedUniversities, true)) {
             return response()->view('registration-closed', compact('selectedUniversity'));
         }
 
@@ -92,15 +94,34 @@ class MedicalRegistrationController extends Controller
 
     public function store(Request $request)
     {
-        if ($request->input('university_id') === 'AUG') {
-            return response()->view('registration-closed', [
-                'selectedUniversity' => [
+        $closedUniversities = ['AUG', 'IUG', 'UPAL'];
+        $universityId = $request->input('university_id');
+
+        if (in_array($universityId, $closedUniversities, true)) {
+            $selectedUniversity = $universityId === 'IUG'
+                ? [
+                    'key' => 'IUG',
+                    'name' => 'الجامعة الإسلامية بغزة',
+                    'logo' => 'images/universities/iug.png',
+                    'program' => 'الطب البشري',
+                ]
+                : [
                     'key' => 'AUG',
                     'name' => 'جامعة الأزهر بغزة',
                     'logo' => 'images/universities/aug.svg',
                     'program' => 'الطب البشري',
-                ],
-            ], 403);
+                ];
+
+            if ($universityId === 'UPAL') {
+                $selectedUniversity = [
+                    'key' => 'UPAL',
+                    'name' => 'جامعة فلسطين',
+                    'logo' => 'images/universities/upal.svg',
+                    'program' => 'طب الأسنان',
+                ];
+            }
+
+            return response()->view('registration-closed', compact('selectedUniversity'), 403);
         }
 
         $startedAt = microtime(true);

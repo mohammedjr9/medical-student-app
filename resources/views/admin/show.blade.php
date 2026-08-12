@@ -31,6 +31,12 @@
 
     <div class="max-w-4xl mx-auto space-y-6">
 
+        @if (session('success'))
+            <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">
+                {{ session('success') }}
+            </div>
+        @endif
+
         <!-- Top Actions Bar -->
         <div class="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
             <a href="{{ route('admin.dashboard') }}" class="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold text-xs flex items-center gap-2">
@@ -38,10 +44,15 @@
                 <span>العودة للوحة التحكم</span>
             </a>
             
+            <div class="flex items-center gap-2">
+            <a href="{{ route('admin.students.files.edit', $student->id) }}" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-2 shadow-md">
+                <i data-lucide="files" class="w-4 h-4"></i><span>تعديل الملفات</span>
+            </a>
             <button onclick="window.print();" class="px-5 py-2.5 rounded-xl bg-medical-600 hover:bg-medical-700 text-white font-bold text-xs flex items-center gap-2 shadow-md">
                 <i data-lucide="printer" class="w-4 h-4"></i>
                 <span>طباعة استمارة الطالب (PDF)</span>
             </button>
+            </div>
         </div>
 
         <!-- Student Master Card -->

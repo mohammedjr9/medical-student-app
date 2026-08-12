@@ -20,9 +20,7 @@ class ExampleTest extends TestCase
     public function test_each_university_has_its_own_registration_page(): void
     {
         $pages = [
-            '/islamic-university' => ['IUG', 'images/universities/iug.png'],
             '/israa-university' => ['ISRAA', 'images/universities/israa.png'],
-            '/palestine-university' => ['UPAL', 'images/universities/upal.svg'],
         ];
 
         foreach ($pages as $url => [$key, $logo]) {
@@ -31,6 +29,19 @@ class ExampleTest extends TestCase
                 ->assertSee('name="university_id" value="'.$key.'"', false)
                 ->assertSee($logo, false);
         }
+    }
+
+    public function test_islamic_registration_is_closed(): void
+    {
+        $this->get('/islamic-university')
+            ->assertOk()
+            ->assertSee('انتهت مدة التسجيل')
+            ->assertDontSee('name="university_id"', false)
+            ->assertSee('images/universities/iug.png', false);
+
+        $this->post('/medical-registration', ['university_id' => 'IUG'])
+            ->assertForbidden()
+            ->assertSee('انتهت مدة التسجيل');
     }
 
     public function test_al_azhar_registration_is_closed(): void
@@ -44,5 +55,17 @@ class ExampleTest extends TestCase
         $this->post('/medical-registration', ['university_id' => 'AUG'])
             ->assertForbidden()
             ->assertSee('انتهت مدة التسجيل');
+    }
+
+    public function test_palestine_university_registration_is_closed(): void
+    {
+        $this->get('/palestine-university')
+            ->assertOk()
+            ->assertDontSee('name="university_id"', false)
+            ->assertSee('images/universities/upal.svg', false);
+
+        $this->post('/medical-registration', ['university_id' => 'UPAL'])
+            ->assertForbidden()
+            ->assertSee('images/universities/upal.svg', false);
     }
 }

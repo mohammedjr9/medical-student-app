@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\MedicalRegistration;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class MedicalRegistrationAdminController extends Controller
 {
@@ -153,6 +154,56 @@ class MedicalRegistrationAdminController extends Controller
         ];
 
         return view('admin.show', compact('student', 'universities', 'academicLevels', 'housingTypes'));
+    }
+
+    public function editFiles($id)
+    {
+        return view('admin.edit-files', ['student' => MedicalRegistration::findOrFail($id)]);
+    }
+
+    public function updateFiles(Request $request, $id)
+    {
+        $student = MedicalRegistration::findOrFail($id);
+        $request->validate([
+            'personal_photo' => ['nullable', 'image', 'max:5120'],
+            'national_id_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'enrollment_cert' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'father_death_cert' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'medical_report' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'sibling_enrollment_cert' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+        ]);
+
+        $files = [
+            'personal_photo' => ['personal_photo_path', 'medical_student_docs/photos'],
+            'national_id_image' => ['national_id_image_path', 'medical_student_docs/ids'],
+            'enrollment_cert' => ['enrollment_cert_path', 'medical_student_docs/enrollments'],
+            'father_death_cert' => ['father_death_cert_path', 'medical_student_docs/special_conditions'],
+            'medical_report' => ['medical_report_path', 'medical_student_docs/special_conditions'],
+            'sibling_enrollment_cert' => ['sibling_enrollment_cert_path', 'medical_student_docs/special_conditions'],
+        ];
+        $updates = [];
+        $oldPaths = [];
+
+        foreach ($files as $input => [$column, $directory]) {
+            if ($request->hasFile($input)) {
+                $updates[$column] = $request->file($input)->store($directory, 'public');
+                if ($student->{$column}) {
+                    $oldPaths[] = $student->{$column};
+                }
+            }
+        }
+
+        if ($updates === []) {
+            return back()->withErrors(['files' => 'اختر ملفًا واحدًا على الأقل لاستبداله.']);
+        }
+
+        $student->update($updates);
+        foreach ($oldPaths as $oldPath) {
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        return redirect()->route('admin.students.show', $student->id)
+            ->with('success', 'تم تحديث ملفات الطالب بنجاح.');
     }
 
     public function destroy($id)
