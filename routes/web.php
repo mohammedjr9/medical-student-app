@@ -27,6 +27,7 @@ Route::prefix('admin')->group(function () {
     Route::middleware(\App\Http\Middleware\AdminAuthenticated::class)->group(function () {
     Route::get('/', [MedicalRegistrationAdminController::class, 'index'])->name('admin.dashboard');
     Route::get('/students', [MedicalRegistrationAdminController::class, 'index'])->name('admin.students.index');
+    Route::get('/students/export', [MedicalRegistrationAdminController::class, 'export'])->name('admin.students.export');
     Route::get('/students/{id}', [MedicalRegistrationAdminController::class, 'show'])->name('admin.students.show');
     Route::get('/students/{id}/files/edit', [MedicalRegistrationAdminController::class, 'editFiles'])->name('admin.students.files.edit');
     Route::put('/students/{id}/files', [MedicalRegistrationAdminController::class, 'updateFiles'])->name('admin.students.files.update');

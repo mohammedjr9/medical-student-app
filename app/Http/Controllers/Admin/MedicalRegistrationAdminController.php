@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\MedicalRegistration;
+use App\Support\StudentExcelExporter;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -11,48 +13,9 @@ class MedicalRegistrationAdminController extends Controller
 {
     public function index(Request $request)
     {
-        $query = MedicalRegistration::query();
         $allowedUniversities = ['IUG', 'AUG', 'ISRAA', 'UPAL'];
-
-        // Search Keyword
-        if ($request->filled('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('full_name', 'like', "%{$search}%")
-                  ->orWhere('national_id', 'like', "%{$search}%")
-                  ->orWhere('mobile_number', 'like', "%{$search}%")
-                  ->orWhere('reference_number', 'like', "%{$search}%");
-            });
-        }
-
-        // Filter by University
-        if ($request->filled('university') && in_array($request->input('university'), $allowedUniversities, true)) {
-            $query->where('university_id', $request->input('university'));
-        }
-
-        // Filter by Academic Level
-        if ($request->filled('academic_level')) {
-            $query->where('academic_level', $request->input('academic_level'));
-        }
-
-        // Filter by Housing Type
-        if ($request->filled('housing_type')) {
-            $query->where('housing_type', $request->input('housing_type'));
-        }
-
-        // Filter by Special Condition
-        if ($request->filled('special_condition')) {
-            $cond = $request->input('special_condition');
-            if ($cond === 'father_martyr') {
-                $query->where('is_father_martyr', 'yes');
-            } elseif ($cond === 'disability') {
-                $query->where('has_disability', 'yes');
-            } elseif ($cond === 'sibling') {
-                $query->where('has_sibling_student', 'yes');
-            }
-        }
-
-        $students = $query->orderBy('id', 'desc')->paginate(15)->withQueryString();
+        $query = $this->applyFilters(MedicalRegistration::query(), $request, $allowedUniversities);
+        $students = $this->applyOrdering($query, $request->input('sort'))->paginate(15)->withQueryString();
 
         // High Level Analytics & Counters. When a university is selected, these
         // cards describe that university instead of continuing to show global totals.
@@ -98,6 +61,17 @@ class MedicalRegistrationAdminController extends Controller
             'internship' => 'سنة الامتياز'
         ];
 
+        // Counts make the academic-level filter easier to scan. When a university
+        // is active, show the distribution for that university only.
+        $academicLevelCountsQuery = MedicalRegistration::query();
+        if ($request->filled('university') && in_array($request->input('university'), $allowedUniversities, true)) {
+            $academicLevelCountsQuery->where('university_id', $request->input('university'));
+        }
+        $academicLevelCounts = $academicLevelCountsQuery
+            ->selectRaw('academic_level, COUNT(*) as total')
+            ->groupBy('academic_level')
+            ->pluck('total', 'academic_level');
+
         $housingTypes = [
             'house' => 'منزل',
             'tent' => 'خيمة',
@@ -118,8 +92,110 @@ class MedicalRegistrationAdminController extends Controller
             'universityLogos',
             'universities',
             'academicLevels',
+            'academicLevelCounts',
             'housingTypes'
         ));
+    }
+
+    public function export(Request $request, StudentExcelExporter $exporter)
+    {
+        $validated = $request->validate([
+            'university' => ['nullable', 'in:IUG,AUG,ISRAA,UPAL'],
+            'academic_level' => ['nullable', 'in:level_1,level_2,level_3,level_4,level_5,level_6,internship'],
+            'excluded_academic_levels' => ['nullable', 'array'],
+            'excluded_academic_levels.*' => ['in:level_1,level_2,level_3,level_4,level_5,level_6,internship'],
+            'housing_type' => ['nullable', 'in:house,tent,apartment,relatives,shelter,other'],
+            'gpa_min' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'gpa_max' => ['nullable', 'numeric', 'min:0', 'max:100', 'gte:gpa_min'],
+            'martyr' => ['nullable', 'in:yes,no'],
+            'disability' => ['nullable', 'in:yes,no'],
+            'sibling' => ['nullable', 'in:yes,no'],
+            'sort' => ['nullable', 'in:priority,gpa_desc,gpa_asc,latest'],
+            'export_limit' => ['nullable', 'integer', 'min:1', 'max:5000'],
+        ]);
+
+        $query = $this->applyFilters(MedicalRegistration::query(), $request, ['IUG', 'AUG', 'ISRAA', 'UPAL']);
+        $query = $this->applyOrdering($query, $validated['sort'] ?? null);
+        if (! empty($validated['export_limit'])) {
+            $query->limit((int) $validated['export_limit']);
+        }
+
+        $students = $query->get();
+        if ($students->isEmpty()) {
+            return back()->withErrors(['export' => 'لا توجد نتائج مطابقة لتصديرها.']);
+        }
+
+        return $exporter->download($students);
+    }
+
+    private function applyFilters(Builder $query, Request $request, array $allowedUniversities): Builder
+    {
+        if ($request->filled('search')) {
+            $search = $request->string('search')->trim()->toString();
+            $query->where(function ($q) use ($search) {
+                $q->where('full_name', 'like', "%{$search}%")
+                    ->orWhere('national_id', 'like', "%{$search}%")
+                    ->orWhere('mobile_number', 'like', "%{$search}%")
+                    ->orWhere('reference_number', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('university') && in_array($request->input('university'), $allowedUniversities, true)) {
+            $query->where('university_id', $request->input('university'));
+        }
+        foreach (['academic_level', 'housing_type'] as $field) {
+            if ($request->filled($field)) {
+                $query->where($field, $request->input($field));
+            }
+        }
+        if (! $request->filled('academic_level') && $request->filled('excluded_academic_levels')) {
+            $allowedLevels = ['level_1', 'level_2', 'level_3', 'level_4', 'level_5', 'level_6', 'internship'];
+            $excludedLevels = array_values(array_intersect(
+                (array) $request->input('excluded_academic_levels', []),
+                $allowedLevels
+            ));
+            if ($excludedLevels !== []) {
+                $query->whereNotIn('academic_level', $excludedLevels);
+            }
+        }
+        if ($request->filled('gpa_min') && is_numeric($request->input('gpa_min'))) {
+            $query->where('gpa', '>=', (float) $request->input('gpa_min'));
+        }
+        if ($request->filled('gpa_max') && is_numeric($request->input('gpa_max'))) {
+            $query->where('gpa', '<=', (float) $request->input('gpa_max'));
+        }
+
+        foreach (['martyr' => 'is_father_martyr', 'disability' => 'has_disability', 'sibling' => 'has_sibling_student'] as $input => $column) {
+            if (in_array($request->input($input), ['yes', 'no'], true)) {
+                $query->where($column, $request->input($input));
+            }
+        }
+
+        // Keep old dashboard links/bookmarks working.
+        $legacyConditions = [
+            'father_martyr' => 'is_father_martyr',
+            'disability' => 'has_disability',
+            'sibling' => 'has_sibling_student',
+        ];
+        if (isset($legacyConditions[$request->input('special_condition')])) {
+            $query->where($legacyConditions[$request->input('special_condition')], 'yes');
+        }
+
+        return $query;
+    }
+
+    private function applyOrdering(Builder $query, ?string $sort): Builder
+    {
+        return match ($sort) {
+            'priority' => $query
+                ->orderByRaw("CASE is_father_martyr WHEN 'yes' THEN 0 ELSE 1 END")
+                ->orderByRaw("CASE has_sibling_student WHEN 'yes' THEN 0 ELSE 1 END")
+                ->orderByRaw("CASE has_disability WHEN 'yes' THEN 0 ELSE 1 END")
+                ->orderByDesc('gpa')->orderBy('id'),
+            'gpa_desc' => $query->orderByDesc('gpa')->orderBy('id'),
+            'gpa_asc' => $query->orderBy('gpa')->orderBy('id'),
+            default => $query->orderByDesc('id'),
+        };
     }
 
     public function show($id)

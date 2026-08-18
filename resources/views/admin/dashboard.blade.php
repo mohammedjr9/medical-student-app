@@ -179,7 +179,7 @@
                     <p class="text-xs text-slate-500 mt-0.5">اضغط على الجامعة لعرض طلباتها فقط</p>
                 </div>
                 <a href="{{ route('admin.dashboard') }}"
-                   class="text-xs font-bold px-3 py-2 rounded-xl border transition-colors {{ request()->hasAny(['university', 'search', 'academic_level', 'special_condition']) ? 'border-medical-200 bg-medical-50 text-medical-700 hover:bg-medical-100' : 'border-slate-200 bg-white text-slate-500' }}">
+                   class="text-xs font-bold px-3 py-2 rounded-xl border transition-colors {{ request()->hasAny(['university', 'search', 'academic_level', 'excluded_academic_levels', 'housing_type', 'gpa_min', 'gpa_max', 'martyr', 'disability', 'sibling', 'sort']) ? 'border-medical-200 bg-medical-50 text-medical-700 hover:bg-medical-100' : 'border-slate-200 bg-white text-slate-500' }}">
                     عرض جميع الطلبات
                 </a>
             </div>
@@ -202,7 +202,7 @@
 
         <!-- Search and Filter Bar Card -->
         <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm mb-8">
-            <form method="GET" action="{{ route('admin.dashboard') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <form method="GET" action="{{ route('admin.dashboard') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                 
                 <!-- Search Input -->
                 <div class="lg:col-span-2">
@@ -229,28 +229,126 @@
                 </div>
 
                 <!-- Academic Level Filter -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">المستوى الأكاديمي</label>
-                    <select name="academic_level" onchange="this.form.submit()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-medical-600">
-                        <option value="">جميع المستويات</option>
+                <fieldset class="sm:col-span-2 lg:col-span-3">
+                    <div class="flex items-center justify-between gap-3 mb-2">
+                        <legend class="text-xs font-bold text-slate-700">المستوى الأكاديمي</legend>
+                        @if(request()->filled('academic_level'))
+                            <button type="submit" name="academic_level" value=""
+                                    class="text-[11px] font-bold text-medical-700 hover:text-medical-900 transition-colors">
+                                إلغاء التحديد
+                            </button>
+                        @endif
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="academic_level" value="" class="peer sr-only"
+                                   onchange="this.form.querySelectorAll('input[name=\'excluded_academic_levels[]\']').forEach(input => input.checked=false); this.form.submit()" {{ request('academic_level') ? '' : 'checked' }}>
+                            <span class="min-h-14 px-3 py-2 rounded-xl border border-transparent bg-white text-slate-600 flex items-center justify-between gap-2 transition-all hover:border-medical-200 peer-checked:border-medical-500 peer-checked:bg-medical-50 peer-checked:text-medical-800 peer-checked:ring-2 peer-checked:ring-medical-100">
+                                <span class="text-xs font-extrabold">كل المستويات</span>
+                                <span class="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-slate-100 peer-checked:bg-white">{{ $totalStudents }}</span>
+                            </span>
+                        </label>
                         @foreach($academicLevels as $key => $label)
-                            <option value="{{ $key }}" {{ request('academic_level') == $key ? 'selected' : '' }}>{{ $label }}</option>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="academic_level" value="{{ $key }}" class="peer sr-only"
+                                       onchange="this.form.querySelectorAll('input[name=\'excluded_academic_levels[]\']').forEach(input => input.checked=false); this.form.submit()" {{ request('academic_level') === $key ? 'checked' : '' }}>
+                                <span class="min-h-14 px-3 py-2 rounded-xl border border-transparent bg-white text-slate-600 flex items-center justify-between gap-2 transition-all hover:border-medical-200 hover:-translate-y-0.5 peer-checked:border-medical-500 peer-checked:bg-medical-50 peer-checked:text-medical-800 peer-checked:ring-2 peer-checked:ring-medical-100">
+                                    <span class="text-xs font-extrabold leading-5">{{ $label }}</span>
+                                    <span class="shrink-0 text-[10px] font-black px-1.5 py-0.5 rounded-md bg-slate-100">{{ $academicLevelCounts[$key] ?? 0 }}</span>
+                                </span>
+                            </label>
+                        @endforeach
+                    </div>
+                    <p class="mt-1.5 text-[11px] text-slate-400">اختر سنة دراسية لعرض طلابها مباشرة.</p>
+                </fieldset>
+
+                <fieldset class="sm:col-span-2 lg:col-span-3">
+                    <legend class="block text-xs font-bold text-slate-700 mb-1.5">استثناء سنوات دراسية</legend>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-2xl border border-rose-200 bg-rose-50/50 p-2">
+                        @foreach($academicLevels as $key => $label)
+                            <label class="cursor-pointer">
+                                <input type="checkbox" name="excluded_academic_levels[]" value="{{ $key }}" class="peer sr-only"
+                                       onchange="this.form.querySelector('input[name=academic_level][value=\'\']').checked=true"
+                                       {{ in_array($key, (array) request('excluded_academic_levels', []), true) ? 'checked' : '' }}>
+                                <span class="min-h-11 px-2.5 py-2 rounded-xl border border-transparent bg-white text-slate-600 flex items-center gap-2 transition-all hover:border-rose-300 peer-checked:border-rose-500 peer-checked:bg-rose-100 peer-checked:text-rose-800 peer-checked:ring-2 peer-checked:ring-rose-100">
+                                    <i data-lucide="circle-minus" class="w-3.5 h-3.5 shrink-0"></i>
+                                    <span class="text-[11px] font-extrabold leading-4">{{ $label }}</span>
+                                </span>
+                            </label>
+                        @endforeach
+                    </div>
+                    @php($excludedLevelKeys = (array) request('excluded_academic_levels', []))
+                    @if($excludedLevelKeys !== [])
+                        <p class="mt-1.5 text-[11px] font-bold text-rose-600">
+                            تم تحديد {{ count($excludedLevelKeys) }} مستوى للاستثناء. اضغط «تطبيق البحث» لتحديث النتائج.
+                        </p>
+                    @else
+                        <p class="mt-1.5 text-[11px] text-slate-400">يمكنك تحديد أكثر من سنة، ثم اضغط «تطبيق البحث».</p>
+                    @endif
+                </fieldset>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">نوع السكن</label>
+                    <select name="housing_type" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-medical-600">
+                        <option value="">جميع أنواع السكن</option>
+                        @foreach($housingTypes as $key => $label)
+                            <option value="{{ $key }}" {{ request('housing_type') === $key ? 'selected' : '' }}>{{ $label }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                <!-- Special Conditions Filter -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">الحالات الخاصة</label>
-                    <select name="special_condition" onchange="this.form.submit()" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-medical-600">
-                        <option value="">جميع الحالات</option>
-                        <option value="father_martyr" {{ request('special_condition') == 'father_martyr' ? 'selected' : '' }}>والد شهيد أو أسير</option>
-                        <option value="disability" {{ request('special_condition') == 'disability' ? 'selected' : '' }}>إعاقة / إصابة</option>
-                        <option value="sibling" {{ request('special_condition') == 'sibling' ? 'selected' : '' }}>أخ طالب بالجامعة</option>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">المعدل من</label>
+                    <input type="number" name="gpa_min" value="{{ request('gpa_min') }}" min="0" max="100" step="0.01" placeholder="مثال: 80"
+                           class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-medical-600" dir="ltr">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">المعدل إلى</label>
+                    <input type="number" name="gpa_max" value="{{ request('gpa_max') }}" min="0" max="100" step="0.01" placeholder="مثال: 100"
+                           class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-medical-600" dir="ltr">
+                </div>
+
+                @foreach([
+                    'martyr' => 'ابن شهيد/متوفى',
+                    'disability' => 'إعاقة أو إصابة',
+                    'sibling' => 'أخ/أخت بالجامعة',
+                ] as $field => $label)
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{{ $label }}</label>
+                        <select name="{{ $field }}" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-medical-600">
+                            <option value="">الكل</option>
+                            <option value="yes" {{ request($field) === 'yes' ? 'selected' : '' }}>نعم</option>
+                            <option value="no" {{ request($field) === 'no' ? 'selected' : '' }}>لا</option>
+                        </select>
+                    </div>
+                @endforeach
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">ترتيب النتائج</label>
+                    <select name="sort" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-medical-600">
+                        <option value="latest" {{ request('sort', 'latest') === 'latest' ? 'selected' : '' }}>الأحدث أولًا</option>
+                        <option value="priority" {{ request('sort') === 'priority' ? 'selected' : '' }}>حسب الأولوية</option>
+                        <option value="gpa_desc" {{ request('sort') === 'gpa_desc' ? 'selected' : '' }}>المعدل: الأعلى أولًا</option>
+                        <option value="gpa_asc" {{ request('sort') === 'gpa_asc' ? 'selected' : '' }}>المعدل: الأقل أولًا</option>
                     </select>
                 </div>
 
-                <div class="sm:col-span-2 lg:col-span-5 flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">عدد صفوف Excel</label>
+                    <select name="export_limit" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-medical-600">
+                        <option value="">كل النتائج</option>
+                        @foreach([50, 75, 100, 150, 250, 500] as $limit)
+                            <option value="{{ $limit }}" {{ (string) request('export_limit') === (string) $limit ? 'selected' : '' }}>أول {{ $limit }} طالب</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                @if($errors->has('export'))
+                    <p class="sm:col-span-2 lg:col-span-6 text-xs font-bold text-rose-600">{{ $errors->first('export') }}</p>
+                @endif
+
+                <div class="sm:col-span-2 lg:col-span-6 flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
                     <a href="{{ route('admin.dashboard') }}" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-bold text-xs transition-colors flex items-center gap-2">
                         <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                         مسح الفلاتر
@@ -258,6 +356,10 @@
                     <button type="submit" class="px-5 py-2.5 rounded-xl bg-medical-600 text-white hover:bg-medical-700 font-bold text-xs shadow-sm transition-colors flex items-center gap-2">
                         <i data-lucide="search" class="w-4 h-4"></i>
                         تطبيق البحث
+                    </button>
+                    <button type="submit" formaction="{{ route('admin.students.export') }}" class="px-5 py-2.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 font-bold text-xs shadow-sm transition-colors flex items-center gap-2">
+                        <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                        تصدير النتائج إلى Excel
                     </button>
                 </div>
 
